@@ -1,0 +1,12 @@
+{
+    "Сочи": {"beach": true, "child_ok": true, "car_needed": false, "comfort": 0.7, "transport": "plane"},
+    "Анталья": {"beach": true, "child_ok": true, "car_needed": false, "comfort": 0.8, "transport": "plane"},
+    "Пхукет": {"beach": true, "child_ok": true, "car_needed": false, "comfort": 0.8, "transport": "plane"},
+    "Дубай": {"beach": true, "child_ok": true, "car_needed": false, "comfort": 1.0, "transport": "plane"},
+    "Владивосток": {"beach": true, "child_ok": true, "car_needed": false, "comfort": 0.5, "transport": "plane"},
+    "Барнаул": {"beach": false, "child_ok": false, "car_needed": true, "comfort": 0.4, "transport": "plane"},
+    "Махачкала": {"beach": false, "child_ok": false, "car_needed": true, "comfort": 0.4, "transport": "plane"},
+    "Москва": {"beach": false, "child_ok": true, "car_needed": false, "comfort": 0.7, "transport": "plane"},
+    "Анапа": {"beach": true, "child_ok": true, "car_needed": false, "comfort": 0.5, "transport": "train"},
+    "Выборг": {"beach": false, "child_ok": true, "car_needed": false, "comfort": 0.5, "transport": "train"}
+}

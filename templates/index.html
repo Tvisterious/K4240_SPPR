@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Travel SPPR MVP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; background-color: #f8f9fa; }
+        .card { margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        #loading { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4 text-center">Система Поддержки Принятия Решений (Туризм)</h1>
+        
+        <ul class="nav nav-tabs mb-4" id="myTab" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#recommend">Подбор направления</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#cities">Альтернативы</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#model">Обучение модели</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#charts">Аналитика</button></li>
+        </ul>
+
+        <div class="tab-content" id="myTabContent">
+            <div class="tab-pane fade show active" id="recommend">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card p-3">
+                            <h5>Параметры ЛПР</h5>
+                            <form id="spprForm">
+                                <div class="mb-2"><label>Бюджет (руб)</label><input type="number" class="form-control" id="budget" value="100000"></div>
+                                <div class="mb-2"><label>Человек</label><input type="number" class="form-control" id="people" value="2"></div>
+                                <div class="mb-2"><label>Сезон</label><select class="form-select" id="season"><option>Лето</option><option>Зима</option></select></div>
+                                <div class="mb-2"><label>Месяц (1-12)</label><input type="number" class="form-control" id="month" value="7"></div>
+                                <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="has_children"><label class="form-check-label">Есть дети</label></div>
+                                <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="has_car"><label class="form-check-label">Есть машина</label></div>
+                                <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="wants_beach" checked><label class="form-check-label">Хочет пляж</label></div>
+                                <div class="mb-2"><label>Комфорт</label><select class="form-select" id="comfort_level"><option>Эконом</option><option selected>Средний</option><option>Премиум</option></select></div>
+                                <button type="button" class="btn btn-primary w-100 mt-3" onclick="getRecommendations()">Подобрать</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div id="loading" class="text-center mt-5"><div class="spinner-border text-primary"></div></div>
+                        <div id="results"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="cities">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card p-3">
+                            <h5>Список городов</h5>
+                            <table class="table table-striped" id="citiesTable">
+                                <thead><tr><th>Город</th><th>Цена</th><th>Транспорт</th><th>Комфорт</th><th>Пляж</th><th>Дети</th><th>Действие</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card p-3">
+                            <h5>Добавить город</h5>
+                            <input type="text" class="form-control mb-2" id="new_city_name" placeholder="Название">
+                            <select class="form-select mb-2" id="new_city_transport"><option value="plane">Самолет</option><option value="train">Поезд</option></select>
+                            <input type="number" step="0.1" class="form-control mb-2" id="new_city_comfort" placeholder="Комфорт (0-1)" value="0.5">
+                            <input type="number" class="form-control mb-2" id="new_city_price" placeholder="Цена (руб)" value="15000">
+                            <div class="form-check mb-1"><input class="form-check-input" type="checkbox" id="new_city_beach"><label class="form-check-label">Пляж</label></div>
+                            <div class="form-check mb-1"><input class="form-check-input" type="checkbox" id="new_city_child"><label class="form-check-label">Для детей</label></div>
+                            <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="new_city_car"><label class="form-check-label">Нужна машина</label></div>
+                            <button class="btn btn-success w-100" onclick="addCity()">Добавить</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="model">
+                <div class="card p-3">
+                    <h5>Загрузка нового датасета и переобучение</h5>
+                    <p>Загрузите CSV с колонками: date, destination, month, day_of_week, is_weekend, price</p>
+                    <input type="file" class="form-control mb-2" id="csvFile" accept=".csv">
+                    <button class="btn btn-warning" onclick="uploadDataset()">Загрузить и переобучить</button>
+                    <div id="modelStatus" class="mt-2 text-success"></div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="charts">
+                <div class="card p-3">
+                    <h5>Визуализация данных</h5>
+                    <div class="mb-3">
+                        <button class="btn btn-outline-primary" onclick="loadChart('seasonality')">Сезонность</button>
+                        <button class="btn btn-outline-primary" onclick="loadChart('distribution')">Распределение</button>
+                    </div>
+                    <img id="chartImg" src="" class="img-fluid" style="display:none;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        async function getRecommendations() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').innerHTML = '';
+            
+            const payload = {
+                budget: parseInt(document.getElementById('budget').value),
+                people: parseInt(document.getElementById('people').value),
+                season: document.getElementById('season').value,
+                month: parseInt(document.getElementById('month').value),
+                day_of_week: 5,
+                has_children: document.getElementById('has_children').checked,
+                has_car: document.getElementById('has_car').checked,
+                wants_beach: document.getElementById('wants_beach').checked,
+                comfort_level: document.getElementById('comfort_level').value
+            };
+
+            const res = await fetch('/api/recommend', {
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            
+            document.getElementById('loading').style.display = 'none';
+            
+            if(data.status === 'success') {
+                let html = '<div class="row">';
+                data.recommendations.forEach((r, i) => {
+                    html += `<div class="col-md-4">
+                        <div class="card p-3 h-100 border-primary">
+                            <h5 class="card-title">${i+1}. ${r.city}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">Совпадение: ${Math.round(r.score*100)}%</h6>
+                            <p class="card-text"><small>Цена за 1: ${r.price} руб.<br>Итого: ${r.total_cost} руб.</small></p>
+                            <div class="alert alert-info py-1 px-2 mt-auto" style="font-size: 0.85rem;">${r.explanation}</div>
+                        </div></div>`;
+                });
+                html += '</div>';
+                
+                html += `<div class="mt-4"><h5>Исключенные направления:</h5><ul class="list-group">`;
+                for (const [city, reason] of Object.entries(data.rejected)) {
+                    html += `<li class="list-group-item list-group-item-danger">${city}: ${reason}</li>`;
+                }
+                html += `</ul></div>`;
+                document.getElementById('results').innerHTML = html;
+            } else {
+                document.getElementById('results').innerHTML = `<div class="alert alert-warning">${data.message}</div>`;
+            }
+        }
+
+        async function loadCities() {
+            const res = await fetch('/api/cities');
+            const cities = await res.json();
+            const tbody = document.querySelector('#citiesTable tbody');
+            tbody.innerHTML = '';
+            for (const [name, data] of Object.entries(cities)) {
+                tbody.innerHTML += `<tr>
+                    <td>${name}</td><td>${data.base_price || 'ML'}</td><td>${data.transport}</td><td>${data.comfort}</td>
+                    <td>${data.beach ? 'Да' : 'Нет'}</td><td>${data.child_ok ? 'Да' : 'Нет'}</td>
+                    <td><button class="btn btn-sm btn-danger" onclick="deleteCity('${name}')">X</button></td>
+                </tr>`;
+            }
+        }
+
+        async function addCity() {
+            const formData = new URLSearchParams();
+            formData.append('city_name', document.getElementById('new_city_name').value);
+            formData.append('transport', document.getElementById('new_city_transport').value);
+            formData.append('comfort', document.getElementById('new_city_comfort').value);
+            formData.append('price', document.getElementById('new_city_price').value);
+            formData.append('beach', document.getElementById('new_city_beach').checked);
+            formData.append('child_ok', document.getElementById('new_city_child').checked);
+            formData.append('car_needed', document.getElementById('new_city_car').checked);
+
+            await fetch('/api/cities', { method: 'POST', body: formData });
+            loadCities();
+        }
+
+        async function deleteCity(name) {
+            await fetch(`/api/cities/${name}`, { method: 'DELETE' });
+            loadCities();
+        }
+
+        async function uploadDataset() {
+            const fileInput = document.getElementById('csvFile');
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            
+            document.getElementById('modelStatus').innerText = 'Обучение...';
+            const res = await fetch('/api/upload-dataset', { method: 'POST', body: formData });
+            const data = await res.json();
+            document.getElementById('modelStatus').innerText = data.message;
+        }
+
+        function loadChart(type) {
+            const img = document.getElementById('chartImg');
+            img.src = `/api/charts/${type}?t=${new Date().getTime()}`;
+            img.style.display = 'block';
+        }
+
+        loadCities();
+    </script>
+</body>
+</html>
